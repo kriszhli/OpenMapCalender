@@ -17,12 +17,13 @@ An interactive calendar and map-based trip planner application. Easily schedule 
 - **Vite**: For fast development and build tooling.
 - **Leaflet**: For interactive maps.
 - **Framer Motion**: For smooth animations and transitions.
+- **Antigravity**: For vibe coding~
 
 ## Getting Started
 
 1.  Clone the repository:
     ```bash
-    git clone https://github.com/yourusername/open-map-calender.git
+    git clone https://github.com/kriszhli/open-map-calender.git
     cd open-map-calender
     ```
 
