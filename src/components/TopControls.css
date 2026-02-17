@@ -185,14 +185,79 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    margin-left: auto;
-    /* Push to far right */
+    margin-left: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
+    flex-shrink: 0;
 }
 
 .theme-toggle-btn:hover {
     color: var(--text-high);
     background: var(--card-hover);
     border-color: var(--text-low);
+}
+
+/* ─── Calendar Manager Button ─── */
+.calendar-manager-btn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--card);
+    border: 1px solid var(--glow-accent);
+    color: var(--text-med);
+    padding: 5px 12px 5px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    max-width: 180px;
+}
+
+.calendar-manager-btn:hover {
+    background: var(--card-hover);
+    color: var(--text-high);
+    border-color: var(--text-low);
+}
+
+.calendar-manager-btn-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ─── Delete Calendar Button ─── */
+.delete-calendar-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(196, 123, 107, 0.12);
+    border: 1px solid rgba(196, 123, 107, 0.25);
+    color: #c47b6b;
+    padding: 5px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    margin-left: auto;
+}
+
+.delete-calendar-btn:hover {
+    background: rgba(196, 123, 107, 0.22);
+    border-color: rgba(196, 123, 107, 0.4);
+    color: #d4887a;
+}
+
+[data-theme='bright'] .delete-calendar-btn {
+    background: rgba(196, 80, 60, 0.08);
+    border-color: rgba(196, 80, 60, 0.2);
+    color: #b05545;
+}
+
+[data-theme='bright'] .delete-calendar-btn:hover {
+    background: rgba(196, 80, 60, 0.15);
+    border-color: rgba(196, 80, 60, 0.3);
 }

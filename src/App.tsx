@@ -5,6 +5,7 @@ import TopControls from './components/TopControls';
 import DayGrid from './components/DayGrid';
 import DaySidebar from './components/DaySidebar';
 import MapView from './components/MapView';
+import CalendarManager from './components/CalendarManager';
 import './App.css';
 
 
@@ -67,6 +68,11 @@ function App() {
   const baseStateRef = useRef<CalendarState>(DEFAULT_CALENDAR_STATE);
   const saveSeqRef = useRef(0);
 
+  // Multi-calendar state
+  const [currentCalendarId, setCurrentCalendarId] = useState<string | null>(null);
+  const [currentCalendarName, setCurrentCalendarName] = useState('');
+  const [showCalendarManager, setShowCalendarManager] = useState(false);
+
   const applyCalendarState = useCallback((state: CalendarState) => {
     setNumDays(state.numDays);
     setStartDate(new Date(state.startDate));
@@ -76,36 +82,74 @@ function App() {
     setEvents(state.events);
   }, []);
 
-  // Load initial state from server
+  // Load a specific calendar by ID
+  const loadCalendar = useCallback(async (calId: string) => {
+    try {
+      const res = await fetch(`/api/calendars/${calId}`);
+      if (!res.ok) throw new Error('Failed to load');
+      const data = await res.json();
+      const parsed = parseCalendarResponse(data);
+      serverRevisionRef.current = parsed.revision;
+      baseStateRef.current = parsed.state;
+      applyCalendarState(parsed.state);
+      setCurrentCalendarId(calId);
+      setCurrentCalendarName(data.name || 'Untitled');
+      setApiOnline(true);
+    } catch (err) {
+      console.error('Failed to load calendar:', err);
+      setApiOnline(false);
+    }
+  }, [applyCalendarState]);
+
+  // On mount: check what calendars exist
   useEffect(() => {
-    fetch('/api/calendar')
+    fetch('/api/calendars')
       .then((res) => {
-        if (!res.ok) throw new Error('Failed to load');
+        if (!res.ok) throw new Error('Failed to list');
         return res.json();
       })
-      .then((data) => {
-        const parsed = parseCalendarResponse(data);
-        serverRevisionRef.current = parsed.revision;
-        baseStateRef.current = parsed.state;
-        applyCalendarState(parsed.state);
+      .then((list: { id: string; name: string; updatedAt: string }[]) => {
         setApiOnline(true);
+        if (list.length === 0) {
+          // No calendars — show manager so user can create one
+          setShowCalendarManager(true);
+          setIsLoaded(true);
+        } else {
+          // Load the most recent calendar
+          const mostRecent = list[0];
+          loadCalendar(mostRecent.id).then(() => setIsLoaded(true));
+        }
       })
       .catch((err) => {
-        console.error('Failed to load calendar data:', err);
-        setApiOnline(false);
-      })
-      .finally(() => {
-        setIsLoaded(true);
+        console.error('Failed to list calendars:', err);
+        // Fallback to legacy endpoint
+        fetch('/api/calendar')
+          .then((res) => {
+            if (!res.ok) throw new Error('Failed to load');
+            return res.json();
+          })
+          .then((data) => {
+            const parsed = parseCalendarResponse(data);
+            serverRevisionRef.current = parsed.revision;
+            baseStateRef.current = parsed.state;
+            applyCalendarState(parsed.state);
+            setApiOnline(true);
+          })
+          .catch((err2) => {
+            console.error('Failed to load calendar data:', err2);
+            setApiOnline(false);
+          })
+          .finally(() => setIsLoaded(true));
       });
-  }, [applyCalendarState]);
+  }, [applyCalendarState, loadCalendar]);
 
   // Pull remote updates so all connected users stay in sync.
   useEffect(() => {
-    if (!isLoaded) return;
+    if (!isLoaded || !currentCalendarId) return;
 
     const intervalMs = apiOnline ? 1000 : 5000;
     const intervalId = window.setInterval(() => {
-      fetch('/api/calendar')
+      fetch(`/api/calendars/${currentCalendarId}`)
         .then((res) => {
           if (!res.ok) throw new Error('Failed to sync');
           return res.json();
@@ -129,11 +173,11 @@ function App() {
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [isLoaded, apiOnline, applyCalendarState]);
+  }, [isLoaded, apiOnline, currentCalendarId, applyCalendarState]);
 
   // Persist to server on every state change
   useEffect(() => {
-    if (!isLoaded || !apiOnline) return;
+    if (!isLoaded || !apiOnline || !currentCalendarId) return;
 
     const state: CalendarState = {
       numDays,
@@ -146,7 +190,7 @@ function App() {
     const saveSeq = saveSeqRef.current + 1;
     saveSeqRef.current = saveSeq;
 
-    fetch('/api/calendar', {
+    fetch(`/api/calendars/${currentCalendarId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -170,7 +214,7 @@ function App() {
         console.error('Failed to save:', err);
         setApiOnline(false);
       });
-  }, [isLoaded, apiOnline, numDays, startDate, startHour, endHour, viewMode, events]);
+  }, [isLoaded, apiOnline, currentCalendarId, numDays, startDate, startHour, endHour, viewMode, events]);
 
   // Clamp dayViewIndex when numDays or viewMode changes
   useEffect(() => {
@@ -223,6 +267,73 @@ function App() {
     setDayViewIndex(index);
   }, []);
 
+  // ─── Calendar Manager handlers ───
+
+  const handleSelectCalendar = useCallback(async (id: string) => {
+    await loadCalendar(id);
+    setShowCalendarManager(false);
+  }, [loadCalendar]);
+
+  const handleCreateCalendar = useCallback(async (name: string) => {
+    try {
+      const res = await fetch('/api/calendars', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+      if (!res.ok) throw new Error('Failed to create');
+      const data = await res.json();
+      await loadCalendar(data.id);
+      setShowCalendarManager(false);
+    } catch (err) {
+      console.error('Failed to create calendar:', err);
+    }
+  }, [loadCalendar]);
+
+  const handleRenameCalendar = useCallback(async (id: string, name: string) => {
+    try {
+      await fetch(`/api/calendars/${id}/rename`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+      if (id === currentCalendarId) {
+        setCurrentCalendarName(name);
+      }
+    } catch (err) {
+      console.error('Failed to rename calendar:', err);
+    }
+  }, [currentCalendarId]);
+
+  const handleDeleteCalendarFromManager = useCallback(async (id: string) => {
+    try {
+      await fetch(`/api/calendars/${id}`, { method: 'DELETE' });
+      if (id === currentCalendarId) {
+        setCurrentCalendarId(null);
+        setCurrentCalendarName('');
+        applyCalendarState(DEFAULT_CALENDAR_STATE);
+      }
+    } catch (err) {
+      console.error('Failed to delete calendar:', err);
+    }
+  }, [currentCalendarId, applyCalendarState]);
+
+  const handleDeleteCurrentCalendar = useCallback(async () => {
+    if (!currentCalendarId) return;
+    const confirmed = window.confirm(`Delete "${currentCalendarName}"? This action cannot be undone.`);
+    if (!confirmed) return;
+
+    try {
+      await fetch(`/api/calendars/${currentCalendarId}`, { method: 'DELETE' });
+      setCurrentCalendarId(null);
+      setCurrentCalendarName('');
+      applyCalendarState(DEFAULT_CALENDAR_STATE);
+      setShowCalendarManager(true);
+    } catch (err) {
+      console.error('Failed to delete calendar:', err);
+    }
+  }, [currentCalendarId, currentCalendarName, applyCalendarState]);
+
   // In Day view, only pass events for the selected day to the map
   const mapEvents = useMemo(() => {
     if (viewMode === 'day') {
@@ -263,6 +374,10 @@ function App() {
         onStartHourChange={setStartHour}
         onEndHourChange={setEndHour}
         onViewModeChange={setViewMode}
+        calendarName={currentCalendarName}
+        onOpenCalendarManager={() => setShowCalendarManager(true)}
+        onDeleteCalendar={handleDeleteCurrentCalendar}
+        hasCalendar={!!currentCalendarId}
       />
       <div className={`app-main ${isDayView ? 'app-main-day' : ''}`}>
         {isDayView && (
@@ -306,6 +421,17 @@ function App() {
           />
         )}
       </div>
+
+      {/* Calendar Manager Modal */}
+      <CalendarManager
+        visible={showCalendarManager}
+        currentCalendarId={currentCalendarId}
+        onSelectCalendar={handleSelectCalendar}
+        onCreateCalendar={handleCreateCalendar}
+        onRenameCalendar={handleRenameCalendar}
+        onDeleteCalendar={handleDeleteCalendarFromManager}
+        onClose={() => setShowCalendarManager(false)}
+      />
     </AppShell>
   );
 }

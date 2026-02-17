@@ -1,0 +1,348 @@
+/* ─── Calendar Manager Modal ─── */
+
+.calendar-manager-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+[data-theme='bright'] .calendar-manager-backdrop {
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.calendar-manager-modal {
+    width: 460px;
+    max-width: 90vw;
+    max-height: 80vh;
+    background: var(--bg-elevated);
+    border: 1px solid var(--glow-accent);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5), 0 0 1px var(--glow-accent);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* ─── Header ─── */
+.cm-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--glow-accent);
+}
+
+.cm-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.cm-logo {
+    color: var(--text-med);
+    opacity: 0.7;
+}
+
+.cm-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-high);
+    letter-spacing: -0.01em;
+}
+
+.cm-close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: none;
+    border: none;
+    color: var(--text-low);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.cm-close-btn:hover {
+    background: var(--glow-accent);
+    color: var(--text-high);
+}
+
+/* ─── Body ─── */
+.cm-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 0;
+    min-height: 120px;
+}
+
+.cm-loading {
+    padding: 40px 24px;
+    text-align: center;
+    color: var(--text-low);
+    font-size: 13px;
+}
+
+.cm-section-label {
+    padding: 4px 24px 8px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-low);
+}
+
+/* ─── Calendar List ─── */
+.cm-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.cm-calendar-row {
+    display: flex;
+    align-items: center;
+    padding: 8px 24px;
+    transition: background 0.15s ease;
+    min-height: 48px;
+}
+
+.cm-calendar-row:hover {
+    background: var(--glow-soft);
+}
+
+.cm-calendar-row.current {
+    background: var(--glow-accent);
+}
+
+.cm-calendar-info {
+    flex: 1;
+    min-width: 0;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.cm-calendar-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-high);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cm-calendar-date {
+    font-size: 11px;
+    color: var(--text-low);
+}
+
+.cm-calendar-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    flex-shrink: 0;
+}
+
+.cm-calendar-row:hover .cm-calendar-actions {
+    opacity: 1;
+}
+
+.cm-icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: none;
+    border: none;
+    color: var(--text-low);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.cm-icon-btn:hover {
+    background: var(--glow-accent);
+    color: var(--text-high);
+}
+
+.cm-icon-btn.delete:hover {
+    color: #c47b6b;
+}
+
+/* ─── Rename row ─── */
+.cm-rename-row,
+.cm-delete-confirm {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.cm-rename-input {
+    flex: 1;
+    font-size: 13px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: var(--card);
+    border: 1px solid var(--glow-accent);
+    color: var(--text-high);
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+.cm-rename-input:focus {
+    border-color: var(--text-low);
+}
+
+.cm-action-btn {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.cm-action-btn.save {
+    background: var(--glow-accent);
+    color: var(--text-high);
+}
+
+.cm-action-btn.save:hover {
+    background: var(--text-ultra-low);
+}
+
+.cm-action-btn.cancel {
+    background: none;
+    color: var(--text-low);
+}
+
+.cm-action-btn.cancel:hover {
+    color: var(--text-high);
+}
+
+.cm-action-btn.delete {
+    background: rgba(196, 123, 107, 0.2);
+    color: #c47b6b;
+}
+
+.cm-action-btn.delete:hover {
+    background: rgba(196, 123, 107, 0.35);
+}
+
+.cm-delete-msg {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text-med);
+}
+
+/* ─── Empty State ─── */
+.cm-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px 32px;
+    gap: 8px;
+}
+
+.cm-empty-icon {
+    font-size: 36px;
+    opacity: 0.5;
+}
+
+.cm-empty-text {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-high);
+}
+
+.cm-empty-sub {
+    font-size: 13px;
+    color: var(--text-low);
+}
+
+/* ─── Footer ─── */
+.cm-footer {
+    padding: 12px 24px 16px;
+    border-top: 1px solid var(--glow-accent);
+}
+
+.cm-create-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-high);
+    background: var(--card);
+    border: 1px dashed var(--text-ultra-low);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cm-create-btn:hover {
+    background: var(--card-hover);
+    border-color: var(--text-low);
+    border-style: solid;
+}
+
+.cm-create-row {
+    display: flex;
+    gap: 8px;
+}
+
+.cm-create-input {
+    flex: 1;
+    font-size: 13px;
+    padding: 8px 12px;
+    border-radius: var(--radius-md);
+    background: var(--card);
+    border: 1px solid var(--glow-accent);
+    color: var(--text-high);
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+.cm-create-input:focus {
+    border-color: var(--text-low);
+}
+
+.cm-create-confirm {
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: var(--radius-md);
+    background: var(--text-ultra-low);
+    color: var(--text-high);
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.cm-create-confirm:hover:not(:disabled) {
+    background: var(--text-low);
+}
+
+.cm-create-confirm:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
