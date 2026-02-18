@@ -1,111 +1,116 @@
 # Open Map Calendar
 
-Plan time and place together.
+![Routes overview](/screenshot_of_routes.png)
 
-Open Map Calendar is a shared planning app where each event can include locations and routes, so your schedule is not just "when" but also "where" and "how you move." It is designed for personal trip planning, team itineraries, and day-by-day logistics where map context matters.
+Plan your schedule and your movement in one view.
 
-## Why It Feels Better Than a Normal Calendar
+Open Map Calendar is built for people who care about *where* things happen, not just *when*. Instead of juggling a calendar app and a map app, you can plan both together in a single workflow.
 
-- You can see your timeline and map at the same time.
-- Events support start and destination points, so movement is part of planning.
-- Route lines can be `simple`, `precise`, or `hidden` per event.
-- In Day view, map interactions are tuned for closer planning (including fine pinch zoom).
-- Calendar data is shared, so multiple people on the same hosted instance stay in sync.
+## Why People Like It
 
-## What You Can Do
+- You can see your timeline and map side by side.
+- Every event can include a start point and destination.
+- Routes are visual, fast to switch, and easy to hide when you want a cleaner map.
+- Labels stay visible as `time | Title`, so the map is readable at a glance.
+- Shared calendars keep everyone on the same page during trips, events, or team schedules.
 
-- Create multiple calendars (work trips, weekend plans, project schedules).
-- Add, edit, color-code, rename, and delete events.
-- Set start and destination locations per event.
-- See event pins on the map with always-visible time/title labels.
-- Auto-connect single-location events to the previous event's endpoint on the same day.
-- Use precise route caching to avoid repeated provider requests for unchanged routes.
+## What It Improves In Real Life
 
-## Mini User Guide
+- Less context switching between apps.
+- Better day planning when movement time matters.
+- Faster "what's next" decisions because map + schedule are already connected.
+- Easier collaboration for families, travel groups, and teams.
+
+## Quick Product Tour
 
 ### 1. Create or open a calendar
-- Click **Calendars** in the top controls.
-- Choose an existing calendar or create a new one.
+Use **Calendars** in the top controls to start a new plan or continue an existing one.
 
-### 2. Add events
-- Drag on a day column to create a time block.
-- Give it a title and optional notes.
-- Add a start location (`📍`) and/or destination (`🏁`).
+### 2. Add events by dragging time
+Drag inside a day column to create a block, then add title, notes, and locations.
 
-### 3. Understand map behavior
-- Pins display labels in the format `time | Title`.
-- If an event has both start and destination, its route is drawn directly.
-- If an event has only one location, it connects from the previous event endpoint on that day.
-- If there is no valid previous endpoint, no route is drawn for that event.
+### 3. Add locations
+- `📍` Start location
+- `🏁` Destination
 
-### 4. Route mode button (single button cycle)
-- Click the route button on an event to cycle:
-  - `simple` -> `precise` -> `hidden` -> `simple`
-- `simple`: fast curved route.
-- `precise`: provider-based route, cached after first fetch.
-- `hidden`: keeps location pins but hides route line.
+If an event has one location only, it can still connect to your previous event endpoint on the same day.
 
-### 5. Day view planning
-- Switch to **Day** view for focused planning.
-- Use pinch/zoom for finer map inspection while scheduling that day.
+### 4. Control route style with one button
+The same button cycles through:
+- `simple` -> `precise` -> `hidden` -> `simple`
 
-## Collaboration and Persistence
+- `simple`: lightweight curved route
+- `precise`: provider route with cached geometry
+- `hidden`: keeps pins, hides route line
 
-- Calendar state is persisted on the server (file-backed).
-- Connected clients on the same hosted instance stay synchronized.
-- Precise route geometry is cached in event data and reused when still valid.
-- Cached route data is removed when locations change or when a route is no longer applicable.
+### 5. Focus mode for a single day
+Switch to **Day view** for tighter planning and fine zoom interaction on the map.
 
-## Run It
+## Screenshots
 
-### For normal use (hosted/LAN)
+![Calendar and map layout](/screenshot_calendar_and_map.png)
+
+![Day view planning](/screenshot_day_view.png)
+
+![Route modes button](/screenshot_route_toggle.png)
+
+## Collaboration and Data
+
+- Calendar changes are persisted on the server.
+- Multiple clients connected to the same hosted app stay synced.
+- Precise routes are cached in event data, so unchanged routes are reused.
+- Cached route geometry is removed only when it is no longer valid or needed.
+
+## Getting Started
+
+### Use it on your network (recommended)
 ```bash
 npm install
 npm run host
 ```
 
-Then open the printed URL (for example `http://192.168.1.15:3000`) from any device on your network.
+Open the printed URL in your browser (and on other devices in the same network if needed).
 
-### For development
+### Develop locally
 ```bash
 npm install
 npm run dev
 ```
 
-- App UI: `http://localhost:5173`
-- API server: `http://localhost:3000`
+- App: `http://localhost:5173`
+- API: `http://localhost:3000`
 
-## Engineering Reference
+## Engineering Notes
 
-### Tech Stack
+### Stack
 - React + TypeScript
 - Vite
 - Express
 - Leaflet
 - Framer Motion
 
-### Project Structure
-- `/Users/kris/AI/Interactive_Calender/src` - frontend app
-- `/Users/kris/AI/Interactive_Calender/server.js` - API + hosted static server
-- `/Users/kris/AI/Interactive_Calender/calendars` - per-calendar persisted data
-- `/Users/kris/AI/Interactive_Calender/scripts/dev.js` - dev runner for API + Vite
+### Main folders/files
+- `src/` - frontend app
+- `server.js` - API + hosting server
+- `calendars/` - persisted calendar data
+- `scripts/dev.js` - runs API + Vite in development
 
 ### Scripts
 - `npm run dev` - API + Vite dev server
 - `npm run dev:client` - Vite only
-- `npm run start` - Express server
-- `npm run build` - TypeScript build + Vite build
-- `npm run host` - build + Express hosting
-- `npm run lint` - ESLint
+- `npm run start` - server only
+- `npm run build` - production build
+- `npm run host` - build + host
+- `npm run lint` - lint checks
 
-### Data (High Level)
-Persisted calendar state includes:
+### Data model (high-level)
+Stored calendar state includes:
 - date range and view settings
-- events keyed by day index
+- events by day
 - event metadata (title, notes, color, locations)
-- route mode and cached precise route geometry when available
+- route mode and cached precise route geometry
 
 ## GitHub
 
-Remote:
-- `origin`: [https://github.com/kriszhli/OpenMapCalender.git](https://github.com/kriszhli/OpenMapCalender.git)
+Repository:
+- [OpenMapCalender](https://github.com/kriszhli/OpenMapCalender)
