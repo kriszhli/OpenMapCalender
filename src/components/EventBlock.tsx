@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { TimeBlock, LocationData } from '../types';
-import { minutesToPx } from '../types';
+import { minutesToPx, minutesToTime } from '../types';
 import ColorPalette from './ColorPalette';
 import './EventBlock.css';
 
@@ -59,6 +59,8 @@ const EventBlock: React.FC<EventBlockProps> = ({
     const durationMinutes = block.endMinutes - block.startMinutes;
     const isCompact = durationMinutes < 150;  // < 2.5 hours
     const isHalfHour = durationMinutes <= 30;
+    const hasSingleEndpoint = Boolean(block.location) !== Boolean(block.destination);
+    const timeRangeLabel = `${minutesToTime(block.startMinutes)} - ${minutesToTime(block.endMinutes)}`;
 
     // Show palette when editing or when no color chosen yet
     const isEditing = titleFocused || bodyFocused || locationFocused || destFocused || colorPickerOpen || showEditPopout;
@@ -348,6 +350,9 @@ const EventBlock: React.FC<EventBlockProps> = ({
                     </button>
                 )}
             </div>
+            {hasSingleEndpoint && (
+                <div className="event-time-range">{timeRangeLabel}</div>
+            )}
         </div>
     );
 
@@ -448,6 +453,9 @@ const EventBlock: React.FC<EventBlockProps> = ({
                             <span className="compact-location-badge">
                                 {block.location && block.destination ? '📍→🏁' : block.location ? '📍' : '🏁'}
                             </span>
+                        )}
+                        {hasSingleEndpoint && (
+                            <span className="compact-time-range">{timeRangeLabel}</span>
                         )}
                     </div>
                 ) : (

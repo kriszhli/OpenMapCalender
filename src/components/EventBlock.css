@@ -114,6 +114,13 @@
     flex-shrink: 0;
 }
 
+.event-time-range {
+    margin-top: 4px;
+    font-size: 10px;
+    color: var(--text-low);
+    padding-left: 2px;
+}
+
 .location-row {
     display: flex;
     gap: 4px;
@@ -338,6 +345,13 @@
 .compact-location-badge {
     font-size: 9px;
     opacity: 0.5;
+    flex-shrink: 0;
+}
+
+.compact-time-range {
+    font-size: 10px;
+    color: var(--text-low);
+    margin-left: auto;
     flex-shrink: 0;
 }
 

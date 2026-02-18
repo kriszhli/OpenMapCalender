@@ -78,6 +78,26 @@
         stroke-width 0.3s ease-out !important;
 }
 
+.map-container .leaflet-tooltip.map-tooltip {
+    background: rgba(8, 10, 14, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 6px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    padding: 4px 8px;
+    pointer-events: none;
+}
+
+[data-theme='bright'] .map-container .leaflet-tooltip.map-tooltip {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(0, 0, 0, 0.12);
+}
+
+.map-tooltip-label {
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
 /* Empty state overlay */
 .map-empty-state {
     position: absolute;

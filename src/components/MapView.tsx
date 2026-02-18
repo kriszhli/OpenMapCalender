@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useMemo, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { TimeBlock } from '../types';
+import { minutesToTime } from '../types';
 import './MapView.css';
 
 interface MapViewProps {
@@ -12,6 +13,14 @@ interface MapViewProps {
 
 const DEFAULT_CENTER: L.LatLngTuple = [30, 0];
 const DEFAULT_ZOOM = 2;
+
+const escapeHtml = (value: string): string =>
+    value
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
 
 // ─── OSRM route fetching ───
 async function fetchRoute(
@@ -190,12 +199,15 @@ const MapView: React.FC<MapViewProps> = ({ events, hoveredEventId, onHoverEvent 
                 opacity: 0.5,
             }).addTo(map);
 
-            marker.bindTooltip(tooltipText, {
-                permanent: false,
+            marker.bindTooltip(
+                `<span class="map-tooltip-label" style="color: ${color}">${escapeHtml(tooltipText)}</span>`,
+                {
+                permanent: true,
                 direction: 'top',
                 offset: [0, -12],
                 className: 'map-tooltip',
-            });
+                }
+            );
 
             marker.on('mouseover', () => {
                 onHoverEvent(eventId);
@@ -215,12 +227,20 @@ const MapView: React.FC<MapViewProps> = ({ events, hoveredEventId, onHoverEvent 
             const color = ev.color || '#5B7FBF';
             const eventMarkers: L.CircleMarker[] = [];
             const eventGlows: L.CircleMarker[] = [];
+            const startTimeLabel = minutesToTime(ev.startMinutes);
+            const endTimeLabel = minutesToTime(ev.endMinutes);
+            const eventTitle = (ev.title || 'Untitled').trim();
 
             // Start pin
             if (ev.location) {
                 const latlng = L.latLng(ev.location.lat, ev.location.lng);
                 bounds.push(latlng);
-                const { marker, glow } = createPin(latlng, color, ev.id, ev.location.name);
+                const { marker, glow } = createPin(
+                    latlng,
+                    color,
+                    ev.id,
+                    `${startTimeLabel} | ${eventTitle}`
+                );
                 eventMarkers.push(marker);
                 eventGlows.push(glow);
             }
@@ -229,7 +249,12 @@ const MapView: React.FC<MapViewProps> = ({ events, hoveredEventId, onHoverEvent 
             if (ev.destination) {
                 const latlng = L.latLng(ev.destination.lat, ev.destination.lng);
                 bounds.push(latlng);
-                const { marker, glow } = createPin(latlng, color, ev.id, ev.destination.name);
+                const { marker, glow } = createPin(
+                    latlng,
+                    color,
+                    ev.id,
+                    `${endTimeLabel} | ${eventTitle}`
+                );
                 eventMarkers.push(marker);
                 eventGlows.push(glow);
             }
