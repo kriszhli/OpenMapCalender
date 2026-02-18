@@ -6,6 +6,12 @@ export interface LocationData {
     lng: number;
 }
 
+export interface PreciseRouteCache {
+    from: LocationData;
+    to: LocationData;
+    coords: [number, number][];
+}
+
 export interface TimeBlock {
     id: string;
     dayIndex: number;
@@ -17,6 +23,7 @@ export interface TimeBlock {
     location?: LocationData;      // start / origin
     destination?: LocationData;   // end / destination (route planning)
     routeMode?: 'simple' | 'precise' | 'hidden'; // default 'simple' (bezier curve)
+    preciseRouteCache?: PreciseRouteCache;
 }
 
 export interface DragState {

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import type { ViewMode, TimeBlock } from './types';
+import type { PreciseRouteCache, ViewMode, TimeBlock } from './types';
 import AppShell from './components/AppShell';
 import TopControls from './components/TopControls';
 import DayGrid from './components/DayGrid';
@@ -255,6 +255,30 @@ function App() {
     setHoveredEventId(id);
   }, []);
 
+  const handlePreciseRouteCacheChange = useCallback(
+    (eventId: string, dayIndex: number, cache: PreciseRouteCache | null) => {
+      setEvents((prev) => {
+        const dayEvents = prev[dayIndex] || [];
+        let changed = false;
+        const nextDayEvents = dayEvents.map((event) => {
+          if (event.id !== eventId) return event;
+          changed = true;
+          return {
+            ...event,
+            preciseRouteCache: cache ?? undefined,
+          };
+        });
+
+        if (!changed) return prev;
+        return {
+          ...prev,
+          [dayIndex]: nextDayEvents,
+        };
+      });
+    },
+    []
+  );
+
   const handlePrevDay = useCallback(() => {
     setDayViewIndex((prev) => Math.max(0, prev - 1));
   }, []);
@@ -412,6 +436,7 @@ function App() {
               hoveredEventId={hoveredEventId}
               onHoverEvent={handleHoverEvent}
               preciseZoomEnabled
+              onPreciseRouteCacheChange={handlePreciseRouteCacheChange}
             />
           </div>
         ) : (
@@ -420,6 +445,7 @@ function App() {
             hoveredEventId={hoveredEventId}
             onHoverEvent={handleHoverEvent}
             preciseZoomEnabled={false}
+            onPreciseRouteCacheChange={handlePreciseRouteCacheChange}
           />
         )}
       </div>

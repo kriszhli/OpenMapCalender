@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useMemo, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import type { TimeBlock } from '../types';
+import type { PreciseRouteCache, TimeBlock } from '../types';
 import { minutesToTime } from '../types';
 import './MapView.css';
 
@@ -10,6 +10,7 @@ interface MapViewProps {
     hoveredEventId: string | null;
     onHoverEvent: (id: string | null) => void;
     preciseZoomEnabled?: boolean;
+    onPreciseRouteCacheChange?: (eventId: string, dayIndex: number, cache: PreciseRouteCache | null) => void;
 }
 
 const DEFAULT_CENTER: L.LatLngTuple = [30, 0];
@@ -22,6 +23,9 @@ const escapeHtml = (value: string): string =>
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#39;');
+
+const isSameCoord = (a: { lat: number; lng: number }, b: { lat: number; lng: number }): boolean =>
+    Math.abs(a.lat - b.lat) < 1e-6 && Math.abs(a.lng - b.lng) < 1e-6;
 
 // ─── OSRM route fetching ───
 async function fetchRoute(
@@ -43,7 +47,13 @@ async function fetchRoute(
     return null;
 }
 
-const MapView: React.FC<MapViewProps> = ({ events, hoveredEventId, onHoverEvent, preciseZoomEnabled = false }) => {
+const MapView: React.FC<MapViewProps> = ({
+    events,
+    hoveredEventId,
+    onHoverEvent,
+    preciseZoomEnabled = false,
+    onPreciseRouteCacheChange,
+}) => {
     const mapRef = useRef<L.Map | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const markersRef = useRef<Map<string, L.CircleMarker[]>>(new Map());
@@ -254,6 +264,36 @@ const MapView: React.FC<MapViewProps> = ({ events, hoveredEventId, onHoverEvent,
             endLatLng: L.LatLng
         ) => {
             if (mode === 'precise') {
+                const cache = ev.preciseRouteCache;
+                const hasValidCache =
+                    !!cache &&
+                    cache.coords.length > 1 &&
+                    isSameCoord(cache.from, startLatLng) &&
+                    isSameCoord(cache.to, endLatLng);
+
+                if (hasValidCache) {
+                    const polyline = L.polyline(cache.coords, {
+                        color,
+                        weight: 3,
+                        opacity: 0.5,
+                        smoothFactor: 1,
+                        className: 'map-route-line',
+                    }).addTo(map);
+
+                    polyline.on('mouseover', () => {
+                        onHoverEvent(ev.id);
+                        polyline.setStyle({ weight: 4, opacity: 0.7 });
+                        polyline.bringToFront();
+                    });
+                    polyline.on('mouseout', () => {
+                        onHoverEvent(null);
+                        polyline.setStyle({ weight: 3, opacity: 0.5 });
+                    });
+
+                    routesRef.current.set(ev.id, polyline);
+                    return;
+                }
+
                 fetchRoute(
                     startLatLng.lat, startLatLng.lng,
                     endLatLng.lat, endLatLng.lng,
@@ -278,6 +318,13 @@ const MapView: React.FC<MapViewProps> = ({ events, hoveredEventId, onHoverEvent,
                     });
 
                     routesRef.current.set(ev.id, polyline);
+
+                    const newCache: PreciseRouteCache = {
+                        from: { name: '', lat: startLatLng.lat, lng: startLatLng.lng },
+                        to: { name: '', lat: endLatLng.lat, lng: endLatLng.lng },
+                        coords: coords.map(([lat, lng]) => [lat, lng] as [number, number]),
+                    };
+                    onPreciseRouteCacheChange?.(ev.id, ev.dayIndex, newCache);
                 });
                 return;
             }
@@ -374,7 +421,12 @@ const MapView: React.FC<MapViewProps> = ({ events, hoveredEventId, onHoverEvent,
                 const currentEndpoint = ev.destination ?? ev.location;
                 const previousEvent = dayEvents[index - 1];
                 const previousEndpoint = previousEvent?.destination ?? previousEvent?.location;
-                if (!currentEndpoint || !previousEndpoint) return;
+                if (!currentEndpoint || !previousEndpoint) {
+                    if (ev.preciseRouteCache) {
+                        onPreciseRouteCacheChange?.(ev.id, ev.dayIndex, null);
+                    }
+                    return;
+                }
 
                 const startLatLng = L.latLng(previousEndpoint.lat, previousEndpoint.lng);
                 const endLatLng = L.latLng(currentEndpoint.lat, currentEndpoint.lng);
@@ -394,7 +446,7 @@ const MapView: React.FC<MapViewProps> = ({ events, hoveredEventId, onHoverEvent,
         return () => {
             isCancelled = true;
         };
-    }, [dayLocatedEvents, onHoverEvent]);
+    }, [dayLocatedEvents, onHoverEvent, onPreciseRouteCacheChange]);
 
     const hasLocations = dayLocatedEvents.length > 0;
 

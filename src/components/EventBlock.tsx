@@ -210,7 +210,7 @@ const EventBlock: React.FC<EventBlockProps> = ({
 
     const handleSelectLocation = useCallback(
         (result: NominatimResult) => {
-            onUpdate({ ...block, location: parseLocation(result) });
+            onUpdate({ ...block, location: parseLocation(result), preciseRouteCache: undefined });
             setLocationQuery('');
             setSearchResults([]);
         },
@@ -219,7 +219,7 @@ const EventBlock: React.FC<EventBlockProps> = ({
 
     const handleSelectDestination = useCallback(
         (result: NominatimResult) => {
-            onUpdate({ ...block, destination: parseLocation(result) });
+            onUpdate({ ...block, destination: parseLocation(result), preciseRouteCache: undefined });
             setDestQuery('');
             setDestResults([]);
         },
@@ -227,11 +227,11 @@ const EventBlock: React.FC<EventBlockProps> = ({
     );
 
     const handleClearLocation = useCallback(() => {
-        onUpdate({ ...block, location: undefined });
+        onUpdate({ ...block, location: undefined, preciseRouteCache: undefined });
     }, [block, onUpdate]);
 
     const handleClearDestination = useCallback(() => {
-        onUpdate({ ...block, destination: undefined });
+        onUpdate({ ...block, destination: undefined, preciseRouteCache: undefined });
     }, [block, onUpdate]);
 
     const blockClasses = [
