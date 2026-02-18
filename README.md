@@ -1,94 +1,111 @@
 # Open Map Calendar
 
-Interactive calendar + map planner for multi-day scheduling, with shared file-backed persistence for LAN collaboration.
+Plan time and place together.
 
-## What It Does
+Open Map Calendar is a shared planning app where each event can include locations and routes, so your schedule is not just "when" but also "where" and "how you move." It is designed for personal trip planning, team itineraries, and day-by-day logistics where map context matters.
 
-- Create, edit, and delete time blocks across days.
-- Switch between `row`, `grid`, and `day` views.
-- Add event locations/destinations and visualize routes on the map.
-- Persist all calendar state to a shared JSON file (`calendar-data.json`):
-  - start date
-  - number of days
-  - start/end hours
-  - view mode
-  - all events and route/location data
-- Live sync between connected clients (same hosted instance).
+## Why It Feels Better Than a Normal Calendar
 
-## Tech Stack
+- You can see your timeline and map at the same time.
+- Events support start and destination points, so movement is part of planning.
+- Route lines can be `simple`, `precise`, or `hidden` per event.
+- In Day view, map interactions are tuned for closer planning (including fine pinch zoom).
+- Calendar data is shared, so multiple people on the same hosted instance stay in sync.
 
+## What You Can Do
+
+- Create multiple calendars (work trips, weekend plans, project schedules).
+- Add, edit, color-code, rename, and delete events.
+- Set start and destination locations per event.
+- See event pins on the map with always-visible time/title labels.
+- Auto-connect single-location events to the previous event's endpoint on the same day.
+- Use precise route caching to avoid repeated provider requests for unchanged routes.
+
+## Mini User Guide
+
+### 1. Create or open a calendar
+- Click **Calendars** in the top controls.
+- Choose an existing calendar or create a new one.
+
+### 2. Add events
+- Drag on a day column to create a time block.
+- Give it a title and optional notes.
+- Add a start location (`📍`) and/or destination (`🏁`).
+
+### 3. Understand map behavior
+- Pins display labels in the format `time | Title`.
+- If an event has both start and destination, its route is drawn directly.
+- If an event has only one location, it connects from the previous event endpoint on that day.
+- If there is no valid previous endpoint, no route is drawn for that event.
+
+### 4. Route mode button (single button cycle)
+- Click the route button on an event to cycle:
+  - `simple` -> `precise` -> `hidden` -> `simple`
+- `simple`: fast curved route.
+- `precise`: provider-based route, cached after first fetch.
+- `hidden`: keeps location pins but hides route line.
+
+### 5. Day view planning
+- Switch to **Day** view for focused planning.
+- Use pinch/zoom for finer map inspection while scheduling that day.
+
+## Collaboration and Persistence
+
+- Calendar state is persisted on the server (file-backed).
+- Connected clients on the same hosted instance stay synchronized.
+- Precise route geometry is cached in event data and reused when still valid.
+- Cached route data is removed when locations change or when a route is no longer applicable.
+
+## Run It
+
+### For normal use (hosted/LAN)
+```bash
+npm install
+npm run host
+```
+
+Then open the printed URL (for example `http://192.168.1.15:3000`) from any device on your network.
+
+### For development
+```bash
+npm install
+npm run dev
+```
+
+- App UI: `http://localhost:5173`
+- API server: `http://localhost:3000`
+
+## Engineering Reference
+
+### Tech Stack
 - React + TypeScript
 - Vite
 - Express
 - Leaflet
 - Framer Motion
 
-## Project Structure
+### Project Structure
+- `/Users/kris/AI/Interactive_Calender/src` - frontend app
+- `/Users/kris/AI/Interactive_Calender/server.js` - API + hosted static server
+- `/Users/kris/AI/Interactive_Calender/calendars` - per-calendar persisted data
+- `/Users/kris/AI/Interactive_Calender/scripts/dev.js` - dev runner for API + Vite
 
-- `/Users/kris/AI/Interactive_Calender/src` - React frontend
-- `/Users/kris/AI/Interactive_Calender/server.js` - Express API + static hosting
-- `/Users/kris/AI/Interactive_Calender/calendar-data.json` - persisted shared calendar state
-- `/Users/kris/AI/Interactive_Calender/scripts/dev.js` - runs API server + Vite together in dev
-
-## Local Development
-
-1. Install dependencies:
-```bash
-npm install
-```
-
-2. Run frontend + API together:
-```bash
-npm run dev
-```
-
-3. Open:
-```text
-http://localhost:5173
-```
-
-Notes:
-- Vite proxies `/api/*` to `http://localhost:3000`.
-- `npm run dev` starts both processes so proxy errors are avoided.
-
-## Production/LAN Hosting
-
-Build and serve the app from Express:
-
-```bash
-npm run host
-```
-
-Server listens on `0.0.0.0:3000` and prints LAN URLs, for example:
-
-```text
-http://192.168.1.15:3000
-```
-
-Anyone opening that URL on your network edits the same shared calendar file.
-
-## Scripts
-
-- `npm run dev` - start API server + Vite dev server
-- `npm run dev:client` - start Vite only
-- `npm run start` - run Express server
+### Scripts
+- `npm run dev` - API + Vite dev server
+- `npm run dev:client` - Vite only
+- `npm run start` - Express server
 - `npm run build` - TypeScript build + Vite build
-- `npm run host` - build then run Express server
-- `npm run lint` - run ESLint
+- `npm run host` - build + Express hosting
+- `npm run lint` - ESLint
 
-## Data Model
-
-Persisted state includes:
-
-- `numDays`
-- `startDate` (ISO string)
-- `startHour`
-- `endHour`
-- `viewMode`
-- `events` keyed by day index, including block metadata and optional route points (`location`, `destination`)
+### Data (High Level)
+Persisted calendar state includes:
+- date range and view settings
+- events keyed by day index
+- event metadata (title, notes, color, locations)
+- route mode and cached precise route geometry when available
 
 ## GitHub
 
 Remote:
-
 - `origin`: [https://github.com/kriszhli/OpenMapCalender.git](https://github.com/kriszhli/OpenMapCalender.git)
