@@ -12,6 +12,7 @@ Open Map Calendar is built for people who care about *where* things happen, not 
 - Every event can include a start point and destination.
 - Routes are visual, fast to switch, and easy to hide when you want a cleaner map.
 - Labels stay visible as `time | Title`, so the map is readable at a glance.
+- Hover handles let you resize events directly from the card (start/end time).
 - Shared calendars keep everyone on the same page during trips, events, or team schedules.
 
 ## What It Improves In Real Life
@@ -28,6 +29,10 @@ Use **Calendars** in the top controls to start a new plan or continue an existin
 
 ### 2. Add events by dragging time
 Drag inside a day column to create a block, then add title, notes, and locations.
+
+To quickly adjust timing later, hover an event card and drag:
+- top dot to move the **start time**
+- bottom dot to move the **end time**
 
 ### 3. Add locations
 - `📍` Start location
@@ -69,6 +74,7 @@ Once details are clear, it creates events directly in your calendar and geocodes
 - Multiple clients connected to the same hosted app stay synced.
 - Precise routes are cached in event data, so unchanged routes are reused.
 - Cached route geometry is removed only when it is no longer valid or needed.
+- Event time changes made via drag handles are saved to persisted calendar data.
 
 ## Getting Started
 
