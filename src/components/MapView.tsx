@@ -15,6 +15,7 @@ interface MapViewProps {
 
 const DEFAULT_CENTER: L.LatLngTuple = [30, 0];
 const DEFAULT_ZOOM = 2;
+const LABEL_CLUSTER_STEP = 0.0008;
 
 const escapeHtml = (value: string): string =>
     value
@@ -26,6 +27,17 @@ const escapeHtml = (value: string): string =>
 
 const isSameCoord = (a: { lat: number; lng: number }, b: { lat: number; lng: number }): boolean =>
     Math.abs(a.lat - b.lat) < 1e-6 && Math.abs(a.lng - b.lng) < 1e-6;
+
+const tooltipPlacements: Array<{ direction: L.Direction; offset: L.PointExpression }> = [
+    { direction: 'top', offset: [0, -12] },
+    { direction: 'right', offset: [12, 0] },
+    { direction: 'left', offset: [-12, 0] },
+    { direction: 'bottom', offset: [0, 12] },
+    { direction: 'top', offset: [10, -14] },
+    { direction: 'top', offset: [-10, -14] },
+    { direction: 'right', offset: [14, -8] },
+    { direction: 'left', offset: [-14, -8] },
+];
 
 // ─── OSRM route fetching ───
 async function fetchRoute(
@@ -205,6 +217,7 @@ const MapView: React.FC<MapViewProps> = ({
         routesRef.current.clear();
 
         const bounds: L.LatLng[] = [];
+        const labelClusterCounts = new Map<string, number>();
 
         // Helper to create a pin pair (main + glow)
         const createPin = (
@@ -232,12 +245,17 @@ const MapView: React.FC<MapViewProps> = ({
                 opacity: 0.5,
             }).addTo(map);
 
+            const clusterKey = `${Math.round(latlng.lat / LABEL_CLUSTER_STEP)}:${Math.round(latlng.lng / LABEL_CLUSTER_STEP)}`;
+            const clusterIndex = labelClusterCounts.get(clusterKey) ?? 0;
+            labelClusterCounts.set(clusterKey, clusterIndex + 1);
+            const placement = tooltipPlacements[clusterIndex % tooltipPlacements.length];
+
             marker.bindTooltip(
                 `<span class="map-tooltip-label" style="color: ${color}">${escapeHtml(tooltipText)}</span>`,
                 {
                 permanent: true,
-                direction: 'top',
-                offset: [0, -12],
+                direction: placement.direction,
+                offset: placement.offset,
                 className: 'map-tooltip',
                 }
             );
