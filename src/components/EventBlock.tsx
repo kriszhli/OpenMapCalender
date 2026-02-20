@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { TimeBlock, LocationData } from '../types';
-import { minutesToPx, minutesToTime } from '../types';
+import { minutesToPx, pxToMinutes, snapToInterval, SNAP_INTERVAL } from '../types';
 import ColorPalette from './ColorPalette';
 import './EventBlock.css';
 
@@ -44,6 +44,7 @@ const EventBlock: React.FC<EventBlockProps> = ({
     const [destQuery, setDestQuery] = useState('');
     const [destResults, setDestResults] = useState<NominatimResult[]>([]);
     const [isDestSearching, setIsDestSearching] = useState(false);
+    const [resizeEdge, setResizeEdge] = useState<'start' | 'end' | null>(null);
     const titleRef = useRef<HTMLInputElement>(null);
     const descRef = useRef<HTMLTextAreaElement>(null);
     const popoutTitleRef = useRef<HTMLInputElement>(null);
@@ -60,8 +61,6 @@ const EventBlock: React.FC<EventBlockProps> = ({
     const durationMinutes = block.endMinutes - block.startMinutes;
     const isCompact = durationMinutes < 150;  // < 2.5 hours
     const isHalfHour = durationMinutes <= 30;
-    const hasSingleEndpoint = Boolean(block.location) !== Boolean(block.destination);
-    const timeRangeLabel = `${minutesToTime(block.startMinutes)} - ${minutesToTime(block.endMinutes)}`;
     const currentRouteMode = block.routeMode || 'simple';
     const PALETTE_ESTIMATED_HEIGHT = 44;
     const PALETTE_GAP = 4;
@@ -90,6 +89,7 @@ const EventBlock: React.FC<EventBlockProps> = ({
     const isEditing = titleFocused || bodyFocused || locationFocused || destFocused || colorPickerOpen || showEditPopout;
     const showPalette = isEditing || !block.color;
     const showDelete = isEditing || !block.color;
+    const isResizing = resizeEdge !== null;
 
     // Click outside handler to dismiss palette and popout
     // Uses capture phase so it fires even if child components call stopPropagation
@@ -187,6 +187,54 @@ const EventBlock: React.FC<EventBlockProps> = ({
         setTimeout(() => popoutTitleRef.current?.focus(), 100);
     }, [topPx]);
 
+    const handleResizeStart = useCallback((edge: 'start' | 'end') => (e: React.PointerEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setResizeEdge(edge);
+    }, []);
+
+    useEffect(() => {
+        if (!resizeEdge) return;
+
+        const handlePointerMove = (e: PointerEvent) => {
+            const containerEl = blockRef.current?.parentElement;
+            if (!containerEl) return;
+
+            const rect = containerEl.getBoundingClientRect();
+            const yInContainer = e.clientY - rect.top;
+            const rawMinutes = pxToMinutes(yInContainer, startHour, endHour, containerHeight);
+            const snapped = snapToInterval(rawMinutes, SNAP_INTERVAL);
+            const minMinutes = startHour * 60;
+            const maxMinutes = endHour * 60;
+
+            if (resizeEdge === 'start') {
+                const nextStart = Math.max(minMinutes, Math.min(block.endMinutes - SNAP_INTERVAL, snapped));
+                if (nextStart !== block.startMinutes) {
+                    onUpdate({ ...block, startMinutes: nextStart });
+                }
+                return;
+            }
+
+            const nextEnd = Math.min(maxMinutes, Math.max(block.startMinutes + SNAP_INTERVAL, snapped));
+            if (nextEnd !== block.endMinutes) {
+                onUpdate({ ...block, endMinutes: nextEnd });
+            }
+        };
+
+        const handlePointerUp = () => {
+            setResizeEdge(null);
+        };
+
+        window.addEventListener('pointermove', handlePointerMove);
+        window.addEventListener('pointerup', handlePointerUp);
+        window.addEventListener('pointercancel', handlePointerUp);
+        return () => {
+            window.removeEventListener('pointermove', handlePointerMove);
+            window.removeEventListener('pointerup', handlePointerUp);
+            window.removeEventListener('pointercancel', handlePointerUp);
+        };
+    }, [resizeEdge, startHour, endHour, containerHeight, block, onUpdate]);
+
     // Nominatim search helper
     const nominatimSearch = useCallback(
         (query: string, setResults: (r: NominatimResult[]) => void, setSearching: (b: boolean) => void, timeoutRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>) => {
@@ -265,6 +313,7 @@ const EventBlock: React.FC<EventBlockProps> = ({
         isHighlighted ? 'highlighted' : '',
         isCompact ? 'compact' : '',
         isHalfHour ? 'half-hour' : '',
+        isResizing ? 'resizing' : '',
     ].filter(Boolean).join(' ');
 
     // ─── Single location input helper ───
@@ -392,9 +441,6 @@ const EventBlock: React.FC<EventBlockProps> = ({
                     </button>
                 )}
             </div>
-            {hasSingleEndpoint && (
-                <div className="event-time-range">{timeRangeLabel}</div>
-            )}
         </div>
     );
 
@@ -468,6 +514,22 @@ const EventBlock: React.FC<EventBlockProps> = ({
                 onMouseLeave={() => onHoverEvent(null)}
                 onClick={isCompact ? handleCompactClick : undefined}
             >
+                <button
+                    className="event-resize-handle top"
+                    onPointerDown={handleResizeStart('start')}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    aria-label="Adjust start time"
+                    tabIndex={-1}
+                />
+
+                <button
+                    className="event-resize-handle bottom"
+                    onPointerDown={handleResizeStart('end')}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    aria-label="Adjust end time"
+                    tabIndex={-1}
+                />
+
                 {/* ─── Delete button ─── */}
                 <AnimatePresence>
                     {showDelete && (
@@ -495,9 +557,6 @@ const EventBlock: React.FC<EventBlockProps> = ({
                             <span className="compact-location-badge">
                                 {block.location && block.destination ? '📍→🏁' : block.location ? '📍' : '🏁'}
                             </span>
-                        )}
-                        {hasSingleEndpoint && (
-                            <span className="compact-time-range">{timeRangeLabel}</span>
                         )}
                     </div>
                 ) : (
